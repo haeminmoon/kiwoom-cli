@@ -72,6 +72,54 @@ describe('tool registration', () => {
   });
 });
 
+describe('get_chart pagination', () => {
+  function chartTool() {
+    const { server, tools } = makeServer();
+    registerChartTools(server);
+    return tools['get_chart'];
+  }
+
+  it('single-requests when count <= per-request cap (day 600)', async () => {
+    const callEndpoint = jest
+      .fn()
+      .mockResolvedValue({ data: { stk_dt_pole_chart_qry: [] }, contYn: false, nextKey: '' });
+    mockedClient.mockReturnValue({ callEndpoint });
+
+    await chartTool().handler({ code: '005930', timeframe: 'day', count: 600 });
+    const [, , opts] = callEndpoint.mock.calls[0];
+    expect(opts).toMatchObject({ paginate: false, maxPages: 1 });
+  });
+
+  it('auto-paginates when count exceeds the cap', async () => {
+    const callEndpoint = jest
+      .fn()
+      .mockResolvedValue({ data: { stk_dt_pole_chart_qry: [] }, contYn: false, nextKey: '' });
+    mockedClient.mockReturnValue({ callEndpoint });
+
+    await chartTool().handler({ code: '005930', timeframe: 'day', count: 2000 });
+    const [, , opts] = callEndpoint.mock.calls[0];
+    expect(opts).toMatchObject({ paginate: true, maxPages: 4 }); // ceil(2000/600)
+  });
+
+  it('slices the returned rows to the requested count', async () => {
+    const rows = Array.from({ length: 1000 }, (_, i) => ({ dt: String(i) }));
+    const callEndpoint = jest
+      .fn()
+      .mockResolvedValue({ data: { stk_min_pole_chart_qry: rows }, contYn: false, nextKey: '' });
+    mockedClient.mockReturnValue({ callEndpoint });
+
+    const res = await chartTool().handler({ code: '005930', timeframe: 'minute', count: 950 });
+    const parsed = JSON.parse(res.content[0].text);
+    expect(parsed.rows).toHaveLength(950);
+  });
+
+  it('caps count at 100000 via the schema', () => {
+    const cfg = chartTool().config;
+    expect(() => cfg.inputSchema.count.parse(100001)).toThrow();
+    expect(cfg.inputSchema.count.parse(100000)).toBe(100000);
+  });
+});
+
 describe('place_order safety', () => {
   function orderTools() {
     const { server, tools } = makeServer();

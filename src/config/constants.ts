@@ -87,3 +87,27 @@ export const ORDER_TYPES: Record<string, string> = {
 
 /** trde_tp codes that are market-style (price must be empty). */
 export const MARKET_ORDER_TYPES = new Set(['3', '13', '23']);
+
+/**
+ * Maximum candles a single chart TR returns (one page). Larger `--count` /
+ * `count` values are satisfied by paging on the response `cont-yn` / `next-key`
+ * headers (handled by KiwoomClient.requestAll). Verified against the official
+ * spec: tick/minute 900, day 600, week 300, month 240, year 30.
+ */
+export const CHART_PER_PAGE_CAP = {
+  tick: 900,
+  minute: 900,
+  day: 600,
+  week: 300,
+  month: 240,
+  year: 30,
+} as const;
+
+export type ChartType = keyof typeof CHART_PER_PAGE_CAP;
+
+/**
+ * Upper bound on the candle count a single command/tool invocation may request,
+ * so a typo can't trigger an unbounded paginate loop. Counts above this are
+ * clamped (CLI) or rejected by the schema (MCP).
+ */
+export const CHART_MAX_COUNT = 100000;

@@ -66,6 +66,28 @@ src/
 - `trde_tp` order types: `0`=limit, `3`=market, `5`=conditional, `6`=best, **`7`=top-priority**, `10/13/16`=IOC, `20/23/26`=FOK, `28`=stop-limit, etc. Market types (`3/13/23`) require an empty `ord_uv`.
 - Weekly chart list key is the doubled `stk_stk_pole_chart_qry` (verified live, not a typo).
 
+### Chart API limits & pagination
+
+Each chart TR returns at most one page of candles. To pull more, continue with the response
+`cont-yn: Y` / `next-key` headers (handled generically by `KiwoomClient.requestAll`, default
+`maxPages: 100`). **Per-request caps** (`CHART_PER_PAGE_CAP` in `config/constants.ts`):
+
+| TR | Timeframe | Per-request max | listKey |
+|---|---|---|---|
+| ka10079 | tick | 900 | `stk_tic_chart_qry` |
+| ka10080 | minute | 900 | `stk_min_pole_chart_qry` |
+| ka10081 | day | 600 | `stk_dt_pole_chart_qry` |
+| ka10082 | week | 300 | `stk_stk_pole_chart_qry` |
+| ka10083 | month | 240 | `stk_mth_pole_chart_qry` |
+| ka10094 | year | 30 | `stk_yr_pole_chart_qry` |
+
+- CLI `chart <type>` and MCP `get_chart` auto-paginate when `--count`/`count` exceeds the cap
+  (or when CLI `-p/--paginate` is set). They pass `{ paginate: true, maxPages: ceil(count/cap) }`
+  to `callEndpoint`, then slice the concatenated list to the requested count so output never
+  exceeds it. `--count` is clamped to `CHART_MAX_COUNT` (100,000) and must be a positive integer.
+- Pagination repeats the **same request body** with `cont-yn: Y` + the prior `next-key`; the API
+  walks backward in time from `base_dt` (period) / latest (tick·minute).
+
 ## Configuration
 
 - Config: `~/.kiwoom-cli/config.json` (0600). Token cache: `~/.kiwoom-cli/token.json` (0600, per environment).

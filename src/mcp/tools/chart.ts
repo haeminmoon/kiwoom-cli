@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { clientOrThrow, mcpJson, withErrorHandling, tool } from '../helpers';
 import { ENDPOINTS, EndpointDef } from '../../client/endpoints';
 import { normalizeStockCode, todayKst } from '../../utils/helpers';
+import { CHART_PER_PAGE_CAP, ChartType } from '../../config/constants';
 
 const PERIOD_EP: Record<string, EndpointDef> = {
   day: ENDPOINTS.dailyChart,
@@ -11,13 +12,17 @@ const PERIOD_EP: Record<string, EndpointDef> = {
   year: ENDPOINTS.yearlyChart,
 };
 
+const DEFAULT_COUNT = 50;
+const MAX_COUNT = 100000;
+
 export function registerChartTools(server: McpServer): void {
   tool(
     server,
     'get_chart',
     {
       description:
-        'Get OHLC chart data for a stock. Period charts (day/week/month/year) end at base date; tick/minute use an aggregation scope. Returns latest-first; use count to cap rows.',
+        'Get OHLC chart data for a stock. Period charts (day/week/month/year) end at base date; tick/minute use an aggregation scope. Returns latest-first; use count to cap rows. ' +
+        'Per-request caps: tick/minute 900, day 600, week 300, month 240, year 30. When count exceeds the cap the tool auto-paginates (cont-yn/next-key) and returns up to count rows.',
       inputSchema: {
         code: z.string().describe('6-digit stock code'),
         timeframe: z
@@ -29,7 +34,14 @@ export function registerChartTools(server: McpServer): void {
           .describe('Tick units (1/3/5/10/30) or minute interval (1/3/5/10/15/30/45/60); default 1'),
         date: z.string().optional().describe('Base date YYYYMMDD for period charts (default today)'),
         adjusted: z.boolean().optional().describe('Adjust for splits/rights (default true)'),
-        count: z.number().min(1).max(900).optional().describe('Max rows to return (default 50)'),
+        count: z
+          .number()
+          .min(1)
+          .max(MAX_COUNT)
+          .optional()
+          .describe(
+            'Max rows to return (default 50). Exceeding the per-request cap (tick/min 900, day 600, week 300, month 240, year 30) auto-paginates.',
+          ),
       },
     },
     async ({ code, timeframe, scope, date, adjusted, count }) =>
@@ -37,6 +49,7 @@ export function registerChartTools(server: McpServer): void {
         const client = clientOrThrow();
         const stk = normalizeStockCode(code);
         const upd = adjusted === false ? '0' : '1';
+        const want = count ?? DEFAULT_COUNT;
 
         let def: EndpointDef;
         let body: Record<string, unknown>;
@@ -51,12 +64,16 @@ export function registerChartTools(server: McpServer): void {
           body = { stk_cd: stk, base_dt: date ?? todayKst(), upd_stkpc_tp: upd };
         }
 
-        const { data } = await client.callEndpoint(def, body);
+        const cap = CHART_PER_PAGE_CAP[timeframe as ChartType];
+        const paginate = want > cap;
+        const maxPages = paginate ? Math.max(1, Math.ceil(want / cap)) : 1;
+
+        const { data } = await client.callEndpoint(def, body, { paginate, maxPages });
         const rows: unknown[] = Array.isArray(data[def.listKey!]) ? data[def.listKey!] : [];
         return mcpJson({
           code: stk,
           timeframe,
-          rows: rows.slice(0, count ?? 50),
+          rows: rows.slice(0, want),
         });
       }),
   );

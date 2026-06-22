@@ -164,6 +164,48 @@ describe('read command actions', () => {
     expect(rows[0].dt).toBe('2026-06-22');
   });
 
+  it('chart day fetches a single page when count <= per-request cap (600)', async () => {
+    const callEndpoint = jest.fn((def: any, _body?: any, _opts?: any) =>
+      Promise.resolve({ data: RESPONSES[def.apiId] ?? {}, contYn: false, nextKey: '' }),
+    );
+    mockedCreate.mockReturnValue({ callEndpoint });
+    await run(['chart', 'day', '005930', '-n', '600']);
+    const [, , opts] = callEndpoint.mock.calls[0];
+    expect(opts).toMatchObject({ paginate: false, maxPages: 1 });
+  });
+
+  it('chart day auto-paginates when count exceeds the cap', async () => {
+    const callEndpoint = jest.fn((def: any, _body?: any, _opts?: any) =>
+      Promise.resolve({ data: RESPONSES[def.apiId] ?? {}, contYn: false, nextKey: '' }),
+    );
+    mockedCreate.mockReturnValue({ callEndpoint });
+    await run(['chart', 'day', '005930', '-n', '2000', '-o', 'json']);
+    const [, , opts] = callEndpoint.mock.calls[0];
+    // 2000 / 600 → 4 pages
+    expect(opts).toMatchObject({ paginate: true, maxPages: 4 });
+  });
+
+  it('chart min auto-paginates when count exceeds the 900 cap', async () => {
+    const callEndpoint = jest.fn((def: any, _body?: any, _opts?: any) =>
+      Promise.resolve({ data: { stk_min_pole_chart_qry: [] }, contYn: false, nextKey: '' }),
+    );
+    mockedCreate.mockReturnValue({ callEndpoint });
+    await run(['chart', 'min', '005930', '-i', '1', '-n', '2000', '-o', 'json']);
+    const [, body, opts] = callEndpoint.mock.calls[0];
+    expect(body).toMatchObject({ tic_scope: '1' });
+    expect(opts).toMatchObject({ paginate: true, maxPages: 3 }); // ceil(2000/900)=3
+  });
+
+  it('chart honours an explicit --paginate even under the cap', async () => {
+    const callEndpoint = jest.fn((def: any, _body?: any, _opts?: any) =>
+      Promise.resolve({ data: RESPONSES[def.apiId] ?? {}, contYn: false, nextKey: '' }),
+    );
+    mockedCreate.mockReturnValue({ callEndpoint });
+    await run(['chart', 'day', '005930', '-n', '50', '--paginate']);
+    const [, , opts] = callEndpoint.mock.calls[0];
+    expect(opts.paginate).toBe(true);
+  });
+
   it('ranking volume renders a table', async () => {
     await run(['ranking', 'volume']);
     expect(tableSpy).toHaveBeenCalled();

@@ -37,22 +37,29 @@ kiwoom-cli market inst-foreign 005930 -s 20260601 -e 20260622   # ka10045
 
 ## Charts
 
-| Timeframe | Command | TR | Scope option |
-|---|---|---|---|
-| Tick | `chart tick <code> -s <n>` | ka10079 | ticks 1/3/5/10/30 |
-| Minute | `chart min <code> -i <n>` | ka10080 | minutes 1/3/5/10/15/30/45/60 |
-| Daily | `chart day <code> -d <YYYYMMDD>` | ka10081 | base date |
-| Weekly | `chart week <code>` | ka10082 | base date |
-| Monthly | `chart month <code>` | ka10083 | base date |
-| Yearly | `chart year <code>` | ka10094 | base date |
+| Timeframe | Command | TR | Scope option | Per-request max |
+|---|---|---|---|---|
+| Tick | `chart tick <code> -s <n>` | ka10079 | ticks 1/3/5/10/30 | 900 |
+| Minute | `chart min <code> -i <n>` | ka10080 | minutes 1/3/5/10/15/30/45/60 | 900 |
+| Daily | `chart day <code> -d <YYYYMMDD>` | ka10081 | base date | 600 |
+| Weekly | `chart week <code>` | ka10082 | base date | 300 |
+| Monthly | `chart month <code>` | ka10083 | base date | 240 |
+| Yearly | `chart year <code>` | ka10094 | base date | 30 |
 
-Common: `-n <count>` caps displayed rows (default 50); `--raw` returns unadjusted prices
-(`upd_stkpc_tp=0`). Charts are returned latest-first. Item time fields: `cntr_tm`
-(tick/minute, YYYYMMDDHHMMSS) or `dt` (period, YYYYMMDD).
+Common: `-n <count>` sets how many candles to return (default 50); `--raw` returns unadjusted
+prices (`upd_stkpc_tp=0`); `-p, --paginate` forces multi-page fetch. Charts are returned
+latest-first. Item time fields: `cntr_tm` (tick/minute, YYYYMMDDHHMMSS) or `dt` (period, YYYYMMDD).
+
+**Max bars & auto-pagination**: a single request returns up to the per-request max above. When
+`-n/--count` exceeds that cap, the CLI auto-paginates over the API's `cont-yn` / `next-key`
+headers (repeating the same body) until the count is reached or data runs out, then slices to
+exactly `--count`. `--count` must be a positive integer and is clamped to 100,000.
 
 ```bash
 kiwoom-cli chart min 005930 -i 5 -n 30 -o json
-kiwoom-cli chart day 005930 -n 60
+kiwoom-cli chart day 005930 -n 600                 # one full page (max)
+kiwoom-cli chart day 005930 -n 2000 -o json        # auto-paginates → ~2000 bars
+kiwoom-cli chart min 005930 -i 1 -n 2000 -o json   # 1-min bars, multiple pages
 ```
 
 ## Rankings

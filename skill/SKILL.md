@@ -127,14 +127,20 @@ kiwoom-cli stock search 삼성 -o json
 | `kiwoom-cli market inst-foreign <code> -s <date> -e <date>` | Institution/foreigner trend |
 
 ### Charts
-| Command | Description |
-|---------|-------------|
-| `kiwoom-cli chart tick <code> [-s 1\|3\|5\|10\|30]` | Tick chart |
-| `kiwoom-cli chart min <code> [-i 1\|3\|5\|10\|15\|30\|45\|60]` | Minute chart |
-| `kiwoom-cli chart day <code> [-d YYYYMMDD]` | Daily |
-| `kiwoom-cli chart week\|month\|year <code>` | Weekly / monthly / yearly |
+| Command | Description | Per-request max |
+|---------|-------------|-----------------|
+| `kiwoom-cli chart tick <code> [-s 1\|3\|5\|10\|30]` | Tick chart | 900 |
+| `kiwoom-cli chart min <code> [-i 1\|3\|5\|10\|15\|30\|45\|60]` | Minute chart | 900 |
+| `kiwoom-cli chart day <code> [-d YYYYMMDD]` | Daily | 600 |
+| `kiwoom-cli chart week <code>` | Weekly | 300 |
+| `kiwoom-cli chart month <code>` | Monthly | 240 |
+| `kiwoom-cli chart year <code>` | Yearly | 30 |
 
-All charts: `-n <count>` (rows), `--raw` (unadjusted prices).
+All charts: `-n <count>` (candles, default 50), `--raw` (unadjusted prices), `-p/--paginate`
+(force multi-page). A single request returns up to the per-request max above; a larger
+`-n/--count` **auto-paginates** via the API's `cont-yn`/`next-key` headers and returns ~that many
+bars (clamped to 100,000). e.g. `chart day 005930 -n 2000` pulls ~2000 daily bars over multiple
+pages.
 
 ### Account
 | Command | Description |

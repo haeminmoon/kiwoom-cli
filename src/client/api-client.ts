@@ -236,10 +236,10 @@ export class KiwoomClient {
   async callEndpoint<T = Record<string, any>>(
     def: EndpointDef,
     body: Record<string, unknown> = {},
-    opts: { paginate?: boolean; contYn?: string; nextKey?: string } = {},
+    opts: { paginate?: boolean; contYn?: string; nextKey?: string; maxPages?: number } = {},
   ): Promise<TrResponse<T>> {
     if (opts.paginate && def.listKey) {
-      const data = await this.requestAll<T>(def.apiId, def.path, body, def.listKey);
+      const data = await this.requestAll<T>(def.apiId, def.path, body, def.listKey, opts.maxPages);
       return { data, contYn: false, nextKey: '' };
     }
     return this.request<T>(def.apiId, def.path, body, {
@@ -250,14 +250,16 @@ export class KiwoomClient {
 
   /**
    * Fetch all pages of a TR, concatenating the array under `listKey`.
-   * Caps at `maxPages` to avoid runaway loops.
+   * Caps at `maxPages` to avoid runaway loops (default 100 — high enough for
+   * large chart pulls; callers pass a tighter bound when they know how many
+   * pages a target row count needs).
    */
   async requestAll<T = Record<string, any>>(
     apiId: string,
     path: string,
     body: Record<string, unknown>,
     listKey: string,
-    maxPages = 20,
+    maxPages = 100,
   ): Promise<T> {
     let page = await this.request<Record<string, any>>(apiId, path, body);
     const acc = Array.isArray(page.data[listKey]) ? [...page.data[listKey]] : [];

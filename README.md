@@ -106,7 +106,25 @@ kiwoom-cli chart week  <코드>                             주봉 (ka10082)
 kiwoom-cli chart month <코드>                             월봉 (ka10083)
 kiwoom-cli chart year  <코드>                             년봉 (ka10094)
 ```
-모두 `-n, --count <n>`(행 수, 기본 50), `--raw`(수정주가 미적용) 지원.
+모두 `-n, --count <n>`(봉 개수, 기본 50), `--raw`(수정주가 미적용), `-p, --paginate`(강제 다중 페이지) 지원.
+
+**1회 요청당 최대 봉 개수 (per-request cap)** — 그 이상은 `cont-yn`/`next-key` 헤더로 **자동 페이지네이션**:
+
+| 차트 | 1회 최대 | `--count` 한도 |
+|---|---|---|
+| tick / min | 900 | 100,000 (자동 분할) |
+| day | 600 | 100,000 (자동 분할) |
+| week | 300 | 100,000 (자동 분할) |
+| month | 240 | 100,000 (자동 분할) |
+| year | 30 | 100,000 (자동 분할) |
+
+`--count`가 1회 최대를 넘으면 자동으로 여러 페이지를 받아 합칩니다(시간순 정렬·중복 제거는 API 순서를 그대로 유지). `-p/--paginate`로 강제할 수도 있습니다. `--count`는 양의 정수여야 하며 100,000으로 클램프됩니다.
+
+```bash
+kiwoom-cli chart day 005930 -n 600              # 한 페이지(최대) — 일봉 600개
+kiwoom-cli chart day 005930 -n 2000 -o json     # 자동 페이지네이션 — 일봉 ~2000개
+kiwoom-cli chart min 005930 -i 1 -n 2000 -o json # 1분봉 ~2000개 (여러 페이지)
+```
 
 ### `account` — 계좌
 ```
