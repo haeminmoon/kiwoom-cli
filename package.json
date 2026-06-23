@@ -1,6 +1,6 @@
 {
   "name": "@2oolkit/kiwoom-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI & MCP server for Kiwoom Securities (키움증권) REST API — quote stocks, query charts, manage your account, and place orders from the terminal",
   "author": "haeminmoon",
   "license": "MIT",
