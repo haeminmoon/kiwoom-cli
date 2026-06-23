@@ -1,9 +1,10 @@
 import { Command } from 'commander';
 import { createClient } from './_helpers';
 import { ENDPOINTS } from '../client/endpoints';
-import { getOutputFormat } from '../output/formatter';
+import { getOutputFormat, output } from '../output/formatter';
 import { handleError } from '../output/error';
 import { unpad, won, formatFields } from '../utils/format';
+import { NETTRADE_FIELDS, extractNetTrade, type Investor } from '../utils/ranking';
 import { emitList } from './market';
 
 /** Shared row formatter for ranking tables (signed prices/rates unpadded, quantities/amounts comma-grouped). */
@@ -155,6 +156,62 @@ export function registerRankingCommands(program: Command): void {
           stex_tp: options.exchange,
         });
         emitList(data, ENDPOINTS.rankPrevVolume.listKey!, getOutputFormat(options), formatRankRow);
+      } catch (err) {
+        handleError(err);
+      }
+    });
+
+  // ranking net-buy (수급: 외국인/기관 순매수·순매도 상위, ka90009)
+  ranking
+    .command('net-buy')
+    .alias('supply')
+    .description('Foreign/institution net-buy 수급 ranking (ka90009)')
+    .option('-b, --by <foreign|institution|both>', 'Investor: foreign=외국인, institution=기관, both', 'both')
+    .option('--side <buy|sell>', 'buy=순매수, sell=순매도', 'buy')
+    .option('-m, --market <000|001|101>', 'Market: 000=all, 001=KOSPI, 101=KOSDAQ', '000')
+    .option('-x, --exchange <1|2|3>', 'Exchange: 1=KRX, 2=NXT, 3=unified', '1')
+    .option('-n, --count <n>', 'Top N (1-50)', '10')
+    .option('-q, --rank-by <1|2>', 'Rank by 1=amount(금액), 2=quantity(수량)', '1')
+    .option('-d, --date <YYYYMMDD>', 'Query date (default: latest)')
+    .option('-o, --output <format>', 'Output format (table/json)', 'table')
+    .action(async (options) => {
+      try {
+        const side: 'buy' | 'sell' = options.side === 'sell' ? 'sell' : 'buy';
+        const by = ['foreign', 'institution', 'both'].includes(options.by) ? options.by : 'both';
+        const investors: Investor[] = by === 'both' ? ['foreign', 'institution'] : [by];
+        const n = Math.min(Math.max(parseInt(String(options.count), 10) || 10, 1), 50);
+        const client = createClient();
+        const { data } = await client.callEndpoint(ENDPOINTS.rankForeignInst, {
+          mrkt_tp: options.market,
+          amt_qty_tp: options.rankBy === '2' ? '2' : '1',
+          qry_dt_tp: options.date ? '1' : '0',
+          date: options.date || '',
+          stex_tp: options.exchange,
+        });
+        const rows: Record<string, string>[] = Array.isArray(data?.[ENDPOINTS.rankForeignInst.listKey!])
+          ? data[ENDPOINTS.rankForeignInst.listKey!]
+          : [];
+        const fmt = getOutputFormat(options);
+        const sideKo = side === 'buy' ? '순매수' : '순매도';
+        const labelKo: Record<string, string> = { foreign: '외국인', institution: '기관' };
+
+        if (fmt === 'json') {
+          const result: Record<string, unknown> = {
+            side,
+            rankBy: options.rankBy === '2' ? 'quantity' : 'amount',
+          };
+          for (const inv of investors) {
+            result[inv] = extractNetTrade(rows, NETTRADE_FIELDS[inv][side], n);
+          }
+          output(result, 'json');
+          return;
+        }
+
+        for (const inv of investors) {
+          const list = extractNetTrade(rows, NETTRADE_FIELDS[inv][side], n);
+          console.log(`\n${labelKo[inv]} ${sideKo} TOP${n} (${options.rankBy === '2' ? '수량' : '금액'} 기준)`);
+          output(list, 'table');
+        }
       } catch (err) {
         handleError(err);
       }

@@ -33,7 +33,7 @@ src/
 │   ├── chart.ts                   # tick, min, day, week, month, year
 │   ├── account.ts                 # balance, deposit, eval, settled, open-orders, executions, order-detail, pnl, journal, returns
 │   ├── order.ts                   # buy, sell, modify, cancel (cash & credit) with confirmation guards
-│   ├── ranking.ts                 # fluctuation, volume, amount, surge, prev-volume
+│   ├── ranking.ts                 # fluctuation, volume, amount, surge, prev-volume, net-buy (수급 ka90009)
 │   └── sector.ts                  # price, stocks, all, daily, codes
 ├── config/
 │   ├── store.ts                   # ~/.kiwoom-cli config.json + token.json cache
@@ -47,6 +47,7 @@ src/
 └── utils/
     ├── format.ts                  # unpad, toNumber, won, price, formatStamp, formatFields
     ├── helpers.ts                 # normalizeStockCode, parseKiwoomExpiry, isTokenExpired, todayKst
+    ├── ranking.ts                 # ka90009 수급: NETTRADE_FIELDS + extractNetTrade/buildNetTradeResult (shared by CLI + MCP)
     └── orderbook.ts               # parseOrderbook/renderOrderbook (ka10004 irregular field naming)
 ```
 

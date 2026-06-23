@@ -92,6 +92,7 @@ export const ENDPOINTS = {
   rankTradeAmount: { apiId: 'ka10032', path: PATHS.rkinfo, korean: '거래대금상위요청', listKey: 'trde_prica_upper' },
   rankVolumeSurge: { apiId: 'ka10023', path: PATHS.rkinfo, korean: '거래량급증요청', listKey: 'trde_qty_sdnin' },
   rankPrevVolume: { apiId: 'ka10031', path: PATHS.rkinfo, korean: '전일거래량상위요청', listKey: 'pred_trde_qty_upper' },
+  rankForeignInst: { apiId: 'ka90009', path: PATHS.rkinfo, korean: '외국인기관매매상위요청', listKey: 'frgnr_orgn_trde_upper' },
 
   // ── Sector / industry (업종) ───────────────────────────────────────────────
   sectorPrice: { apiId: 'ka20001', path: PATHS.sect, korean: '업종현재가요청', listKey: 'inds_cur_prc_tm' },

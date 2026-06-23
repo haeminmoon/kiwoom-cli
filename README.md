@@ -147,6 +147,7 @@ kiwoom-cli ranking volume                 당일 거래량 상위 (ka10030)
 kiwoom-cli ranking amount                 거래대금 상위 (ka10032)
 kiwoom-cli ranking surge                  거래량 급증 (ka10023)
 kiwoom-cli ranking prev-volume            전일 거래량 상위 (ka10031)
+kiwoom-cli ranking net-buy [옵션]         수급: 외국인·기관 순매수 상위 (ka90009)
 
 kiwoom-cli sector price [-m -c]   업종 현재가 (ka20001)
 kiwoom-cli sector stocks          업종 구성종목 (ka20002)
@@ -155,6 +156,9 @@ kiwoom-cli sector daily           업종 일별지수 (ka20009)
 kiwoom-cli sector codes           업종 코드 목록 (ka10101)
 ```
 순위: `-m 000=전체/001=코스피/101=코스닥`, `-x 1=KRX/2=NXT/3=통합`.
+
+수급(`net-buy`, alias `supply`)은 한 번의 ka90009 호출로 외국인·기관 매매상위를 함께 반환합니다:
+`-b foreign|institution|both`(기본 both), `--side buy|sell`(기본 buy=순매수), `-n <1-50>`(기본 10), `-q 1=금액/2=수량`(기본 1), `-d YYYYMMDD`(기본 최신). 예: `kiwoom-cli ranking net-buy -b both -n 10`.
 
 ### `order` — ⚠ `real`에서는 실제 자금
 ```
@@ -194,7 +198,7 @@ kiwoom-cli order cancel 0000139 005930      # 잔량 전부 취소
 }
 ```
 
-도구: `get_stock_info`, `get_price`, `get_orderbook`, `get_daily_price`, `get_recent_trades`, `search_stocks`, `get_chart`, `get_balance`, `get_deposit`, `get_open_orders`, `get_executions`, `get_realized_pnl`, `get_ranking`, `get_sector`, `place_order`, `modify_order`, `cancel_order`.
+도구: `get_stock_info`, `get_price`, `get_orderbook`, `get_daily_price`, `get_recent_trades`, `search_stocks`, `get_chart`, `get_balance`, `get_deposit`, `get_open_orders`, `get_executions`, `get_realized_pnl`, `get_ranking`, `get_net_buy_ranking`, `get_sector`, `place_order`, `modify_order`, `cancel_order`.
 
 주문 도구는 **`confirm: true`를 넘기지 않으면 미리보기만 반환하고 아무것도 실행하지 않습니다** — 에이전트가 실수로 실주문을 낼 수 없습니다.
 

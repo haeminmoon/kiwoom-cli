@@ -161,6 +161,7 @@ pages.
 |---------|-------------|
 | `kiwoom-cli ranking fluctuation [-s 1..5]` | Top gainers/losers |
 | `kiwoom-cli ranking volume\|amount\|surge\|prev-volume` | Volume / value / surge / prior-day |
+| `kiwoom-cli ranking net-buy [-b foreign\|institution\|both] [--side buy\|sell]` | 수급: foreign/institution net-buy top (ka90009) |
 | `kiwoom-cli sector price\|stocks\|all\|daily [-m 0\|1\|2] [-c code]` | Sector indices |
 | `kiwoom-cli sector codes` | List sector (업종) codes |
 
@@ -262,7 +263,7 @@ claude mcp add kiwoom -- kiwoom-mcp
 }
 ```
 
-17 tools: `get_stock_info`, `get_price`, `get_orderbook`, `get_daily_price`, `get_recent_trades`, `search_stocks`, `get_chart`, `get_balance`, `get_deposit`, `get_open_orders`, `get_executions`, `get_realized_pnl`, `get_ranking`, `get_sector`, `place_order`, `modify_order`, `cancel_order`. Order tools return a preview unless `confirm: true`.
+18 tools: `get_stock_info`, `get_price`, `get_orderbook`, `get_daily_price`, `get_recent_trades`, `search_stocks`, `get_chart`, `get_balance`, `get_deposit`, `get_open_orders`, `get_executions`, `get_realized_pnl`, `get_ranking`, `get_net_buy_ranking`, `get_sector`, `place_order`, `modify_order`, `cancel_order`. Order tools return a preview unless `confirm: true`.
 
 ## Resources
 
